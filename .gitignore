@@ -1,0 +1,10 @@
+main.pdf
+normalisation.pdf
+*.bbl
+*.blg
+*.out
+*.xml
+*.log
+*.aux
+*.bcf
+*.gz
