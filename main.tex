@@ -113,9 +113,9 @@ There are two ways to get the POTs for the files one has run over. One can eithe
 
 or one can dump the run and subrun numbers with a \ls module (for example the module used for the analysis). See section \ref{sec:dump} on information on how to dump these numbers. In this case one would call Zarko's script with a text file that contains the run and subrun numbers:\\
 
-\texttt{/uboone/app/users/zarko/getDataInfo.py -v2 --run-subrun-list runsubrun\_list.txt}\\
+\texttt{/uboone/app/users/zarko/getDataInfo.py -v2 \\-\/-run-subrun-list runsubrun\_list.txt}\\
 
-The script will show several variables. One should run this script for both data \bnbon and \extbnb. When running over \bnbon, one should look at the variable \texttt{tor860\_wcut}, which gives the number of POTs corresponding to the number of events one has run over, $N_\text{POT}$. The variable \texttt{E1DCNT\_wcut} gives the number of issued triggers, $N_t^\text{ON}$. \texttt{\_wcut} means with quality cuts applied.
+The script will show several variables. One should run this script for both data \bnbon and \extbnb. When running over \bnbon, one should look at the variable \texttt{tor860\_wcut}, which gives the number of POTs corresponding to the number of events one has run over, $N_t^\text{ON}$. The variable \texttt{E1DCNT\_wcut} gives the number of issued triggers, $N_t^\text{ON}$. \texttt{\_wcut} means with quality cuts applied.
 
 When running over \extbnb, one should only look at \texttt{EXT}, which gives the number of triggers, $N_t^\text{OFF}$. 
 
@@ -123,7 +123,26 @@ The normalisation of off-beam to on-beam data is done by normalising to the same
 
 To normalise the \extbnb sample to the \bnbon sample, one should weight every event in \extbnb with a factor of $N_t^\text{ON}/N_t^\text{OFF}$. In this way both samples will be normalised to an exposure of $N_\text{POT}$ POTs.
 
+If you are dealing with NuMI data instead, things are pretty similar, except for two caveats:
+\begin{itemize}
+    \item The name of the variables you need to retrieve from Zarko's tool are different
+    \item The NuMI external trigger is prescaled. This means that, instead of storing all the events that fired a trigger, only one out of a certain prescale factor is stored. The prescale factor that has been applied varies on a run by run basis. To count properly the number of issued triggers you need to scale each event for the proper prescale factor.
+\end{itemize}
 
+By running this line, you would pick a modifided version of Zarko's tool which takes into account the prescale factor:\\
+\texttt{/uboone/app/users/zarko/prescale/getDataInfo.py -v2 -\/-prescale\\ -\/-run-subrun-list runsubrun\_list.txt \\-f EXT:EA9CNT\_wcut:tortgt\_wcut:tor101\_wcut }\\
+
+To summarize here is a table of the variables you need:
+
+\begin{table}[!h]
+\begin{tabular}{l|l|l}
+Variable            & BNB                                    & NuMI \\
+\hline
+Beam ON - $N POT$  & \texttt{tor860\_wcut} & \texttt{tortgt\_wcut}\\
+Beam ON - $N_t^\text{ON}$  & \texttt{E1DCNT\_wcut} & \texttt{EA9CNT\_wcut}\\
+Beam OFF - $N_t^\text{OFF}$ & \texttt{EXT}          & \texttt{EXT\_NUMIwin\_FEMBeamTriggerAlgo}
+\end{tabular}
+\end{table}
 
 \subsection{Motivation}
 
@@ -228,9 +247,9 @@ void UBXSec::endSubRun(art::SubRun& sr) {
 This TTree is going to be filled per subrun with the run and subrun number. Moreover, since this TTree will be part of the output ana-root file, the analyser will have the run and subrun numbers only for the files that passed the grid processing.
 At this point one can loop over the this TTree and build a txt file with the run and subrun numbers and then call Zarko's script:\\
 
-\texttt{/uboone/app/users/zarko/getDataInfo.py -v2 --run-subrun-list runsubrun\_list.txt}\\
+\texttt{/uboone/app/users/zarko/getDataInfo.py -v2 \\ -\/-run-subrun-list runsubrun\_list.txt}\\
 
-One example to do that is by using a script like this:
+One example to do that is by using a script like the following one, which can be found at \href{https://github.com/marcodeltutto/UBXSec/blob/master/Utils/countPOT.py}{this link}.
 
 \begin{mdframed}[style=exampledefault]%,frametitle={CosmicPFParticleTagger Module Settings}]
 \begin{lstlisting}[label=some-code, language=Python]
@@ -275,10 +294,10 @@ file.close()
 
 os.system('/uboone/app/users/zarko/getDataInfo.py -v2 --run-subrun-list runsubrun_list.txt')
 os.system('rm runsubrun_list.txt')
-}
 \end{lstlisting}
 \end{mdframed} 
 
+In case you are running with NuMI data, it is important to change the next to last line in order to take into account the prescale factor and print the correct variables.
 
 
 \renewcommand*{\bibfont}{\footnotesize}
